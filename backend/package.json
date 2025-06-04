@@ -5,7 +5,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npx tsc && nodemon dist/index.js",
-    "dev2" : "tsc -b && nodemon dist/index.js"
+    "dev2" : "tsc -b && node dist/index.js"
   },
   "keywords": [],
   "author": "",
