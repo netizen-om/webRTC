@@ -38,6 +38,24 @@ wss.on("connection", (ws) => {
                     sdp: messgae.sdp
                 })
             )
+        } else if(messgae.type === "iceCandidate") {
+            console.log("ICE Candidate received");
+            
+            if (ws === reciverSocket) {
+                reciverSocket.send(
+                    JSON.stringify({
+                        type: "iceCandidate",
+                        candidate: messgae.candidate
+                    })
+                );
+            } else if (ws === senderSocket) {
+                senderSocket.send(
+                    JSON.stringify({
+                        type: "iceCandidate",
+                        candidate: messgae.candidate
+                    })
+                );
+            }
         }
         
     })
