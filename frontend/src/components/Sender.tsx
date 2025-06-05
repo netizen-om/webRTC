@@ -19,6 +19,15 @@ function Sender() {
 
       const pc = new RTCPeerConnection();
 
+      
+      
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          console.log("ICE Candidate changed:");
+          socket?.send(JSON.stringify({ type: "iceCandidate", candidate: event.candidate }));
+        }
+      }
+      
       pc.onnegotiationneeded = async() => {
         console.log("Negotiation needed");
         
@@ -26,15 +35,6 @@ function Sender() {
         await pc.setLocalDescription(offer);
         socket?.send(JSON.stringify({ type: "createOffer", sdp : pc.localDescription }))
       }
-
-
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          console.log("ICE Candidate changed:");
-          socket?.send(JSON.stringify({ type: "iceCandidate", candidate: event.candidate }));
-        }
-      }
-
 
       socket.onmessage = async(event) => {
         const data = JSON.parse(event.data);
@@ -50,10 +50,26 @@ function Sender() {
           }
         }
       }
+      getCameraStreamAndSend(pc);
 
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      pc.addTrack(stream.getVideoTracks()[0]);
+      // const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      // pc.addTrack(stream.getVideoTracks()[0]);
 
+    }
+
+        const getCameraStreamAndSend = (pc: RTCPeerConnection) => {
+          console.log("Getting camera stream...");
+          
+        navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.play();
+            // this is wrong, should propogate via a component
+            document.body.appendChild(video);
+            stream.getTracks().forEach((track) => {
+                pc?.addTrack(track);
+            });
+        });
     }
 
   return (

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react'
 
 function Reciever() {
-
+  
   const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [pc, setPc] = useState<RTCPeerConnection | null>(null);
+  // const [pc, setPc] = useState<RTCPeerConnection | null>(null);
+  let pc = new RTCPeerConnection();
 
   useEffect(() => {
           const socket = new WebSocket("ws://localhost:3001")
@@ -15,12 +16,10 @@ function Reciever() {
 
           socket.onmessage = async(event) => {
             const message = JSON.parse(event.data);
-            console.log("Received SDP:");
-            
 
             if (message.type === "createOffer") {
-              const pc = new RTCPeerConnection();
-              setPc(pc);
+              pc = new RTCPeerConnection();
+              
               await pc.setRemoteDescription(message.sdp);
               
               pc.onicecandidate = (event) => {
@@ -31,18 +30,23 @@ function Reciever() {
               };
 
               pc.ontrack = (track) => {
-                console.log("Track received:", track);
+                console.log("Track received:", track); 
                 
               }
-
+              
               const answer = await pc.createAnswer();
               await pc.setLocalDescription(answer);
-
-
+              
+              
               socket.send(JSON.stringify({ type: "answer", sdp: pc.localDescription }));
             } else if (message.type === "iceCandidate") {
               pc?.addIceCandidate(message.candidate)
             }
+            
+            // //@ts-ignore
+            // pc?.ontrack = (track) => {
+            //   console.log("Track received:", track); 
+            // }
           }
 
       }, [])
