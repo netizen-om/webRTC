@@ -7,19 +7,27 @@ function Reciever() {
   useEffect(() => {
           const socket = new WebSocket("ws://localhost:3001")
           socket.onopen = () => {
-              socket.send(JSON.stringify({ type : "receiver" }))
+              socket.send(JSON.stringify({ type : " receiver" }))
           }
-      }, [])
 
-  const startSendingVideo = async() => {
-    const pc = new RTCPeerConnection();
-    const offer = await pc.createOffer();
-  }
+          socket.onmessage = async(event) => {
+            const message = JSON.parse(event.data);
+
+            if (message.type === "createOffer") {
+              const pc = new RTCPeerConnection();
+              pc.setRemoteDescription(message.sdp);
+              const answer = await pc.createAnswer();
+              pc.setLocalDescription(answer);
+
+              socket.send(JSON.stringify({ type: "answer", sdp: pc.localDescription }));
+            }
+          }
+
+      }, [])
 
   return (
     <div>
       <div>Reciever</div>
-      <button onClick={startSendingVideo}>Send Video</button>
     </div>
   )
 }

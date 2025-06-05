@@ -13,18 +13,18 @@ wss.on("connection", (ws) => {
     ws.on("message", (data : any) => {
         const messgae = JSON.parse(data);
         
-        if(messgae.type === "identify-as-sender"){
+        if(messgae.type === "sender"){
             senderSocket = ws;
-        } else if(messgae.type === "identify-as-reciver") {
+        } else if(messgae.type === "reciver") {
             reciverSocket = ws;
-        } else if(messgae.type === "create-offer") {
+        } else if(messgae.type === "offer") {
             reciverSocket?.send(
                 JSON.stringify({
                     type: "offer",
                     offer : messgae.offer
                 })
             )
-        } else if(messgae.type === "create-answer") {
+        } else if(messgae.type === "answer") {
             senderSocket?.send(
                 JSON.stringify({
                     type: "offer",
