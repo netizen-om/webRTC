@@ -10,7 +10,6 @@ function Reciever() {
           socket.onopen = () => {
               socket.send(JSON.stringify({type : "receiver"}))
               console.log("Receiver connected to WebSocket server");
-              
           }
 
           socket.onmessage = async(event) => {
@@ -23,6 +22,13 @@ function Reciever() {
 
               const answer = await pc.createAnswer();
               await pc.setLocalDescription(answer);
+
+              pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                  console.log("ICE Candidate changed:", event.candidate);
+                  socket?.send(JSON.stringify({ type: "iceCandidate", candidate: event.candidate }));
+                }
+              };
 
               socket.send(JSON.stringify({ type: "answer", sdp: pc.localDescription }));
             }

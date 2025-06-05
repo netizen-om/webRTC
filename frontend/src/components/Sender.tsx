@@ -21,6 +21,14 @@ function Sender() {
       const offer = await pc.createOffer(); //this gives SDP
       
       await pc.setLocalDescription(offer);
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          console.log("ICE Candidate changed:", event.candidate);
+          socket?.send(JSON.stringify({ type: "iceCandidate", candidate: event.candidate }));
+        }
+      }
+
       socket?.send(JSON.stringify({ type: "createOffer", sdp : pc.localDescription }))
 
       socket.onmessage = async(event) => {
