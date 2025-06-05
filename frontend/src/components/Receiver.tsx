@@ -6,18 +6,23 @@ function Reciever() {
 
   useEffect(() => {
           const socket = new WebSocket("ws://localhost:3001")
+          setSocket(socket);
           socket.onopen = () => {
-              socket.send(JSON.stringify({ type : " receiver" }))
+              socket.send(JSON.stringify({type : "receiver"}))
+              console.log("Receiver connected to WebSocket server");
+              
           }
 
           socket.onmessage = async(event) => {
             const message = JSON.parse(event.data);
+            console.log("Received SDP:", message);
 
             if (message.type === "createOffer") {
               const pc = new RTCPeerConnection();
-              pc.setRemoteDescription(message.sdp);
+              await pc.setRemoteDescription(message.sdp);
+
               const answer = await pc.createAnswer();
-              pc.setLocalDescription(answer);
+              await pc.setLocalDescription(answer);
 
               socket.send(JSON.stringify({ type: "answer", sdp: pc.localDescription }));
             }
@@ -27,7 +32,7 @@ function Reciever() {
 
   return (
     <div>
-      <div>Reciever</div>
+      <div>Receiver</div>
     </div>
   )
 }

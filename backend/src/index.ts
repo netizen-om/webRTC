@@ -6,7 +6,7 @@ let senderSocket: null | WebSocket = null;
 let reciverSocket: null | WebSocket = null;
 
 wss.on("connection", (ws) => {
-    console.log("Connected to WS server");
+    // console.log("Connected to WS ");
     
     ws.on("error", (error) => console.log(error))
 
@@ -14,21 +14,28 @@ wss.on("connection", (ws) => {
         const messgae = JSON.parse(data);
         
         if(messgae.type === "sender"){
+            console.log("Sender set");
+            
             senderSocket = ws;
-        } else if(messgae.type === "reciver") {
+        } else if(messgae.type === "receiver") {
+            console.log("Receiver set");
             reciverSocket = ws;
-        } else if(messgae.type === "offer") {
+        } else if(messgae.type === "createOffer") {
+            console.log("Creating offer");
+            
             reciverSocket?.send(
                 JSON.stringify({
-                    type: "offer",
-                    offer : messgae.offer
+                    type: "createOffer",
+                    sdp : messgae.sdp
                 })
             )
         } else if(messgae.type === "answer") {
+            console.log("Answer received from receiver");
+            
             senderSocket?.send(
                 JSON.stringify({
-                    type: "offer",
-                    offer : messgae.offer
+                    type: "answer",
+                    sdp: messgae.sdp
                 })
             )
         }

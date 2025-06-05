@@ -9,13 +9,29 @@ function Sender() {
         socket.onopen = () => {
             socket.send(JSON.stringify({ type : "sender" }))
         }
+        setSocket(socket);
     }, [])
 
     const startSendingVideo = async() => {
+      console.log("Starting to send video...");
+      
+      if (!socket) return;
+
       const pc = new RTCPeerConnection();
       const offer = await pc.createOffer(); //this gives SDP
-      pc.setLocalDescription(offer);
+      
+      await pc.setLocalDescription(offer);
       socket?.send(JSON.stringify({ type: "createOffer", sdp : pc.localDescription }))
+
+      socket.onmessage = async(event) => {
+        const data = JSON.parse(event.data);
+        if( data.type === "answer" ) {
+          const answer = data.sdp;
+          await pc.setRemoteDescription(answer);
+          console.log("Answer received and set as remote description");
+        }
+      }
+
     }
 
   return (
