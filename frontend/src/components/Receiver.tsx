@@ -19,16 +19,17 @@ function Reciever() {
             if (message.type === "createOffer") {
               const pc = new RTCPeerConnection();
               await pc.setRemoteDescription(message.sdp);
-
-              const answer = await pc.createAnswer();
-              await pc.setLocalDescription(answer);
-
+              
               pc.onicecandidate = (event) => {
                 if (event.candidate) {
                   console.log("ICE Candidate changed:", event.candidate);
                   socket?.send(JSON.stringify({ type: "iceCandidate", candidate: event.candidate }));
                 }
               };
+              
+              const answer = await pc.createAnswer();
+              await pc.setLocalDescription(answer);
+
 
               socket.send(JSON.stringify({ type: "answer", sdp: pc.localDescription }));
             }
