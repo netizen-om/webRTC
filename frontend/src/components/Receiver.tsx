@@ -1,71 +1,59 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react';
 
-function Reciever() {
-  
-  const videoRef = React.useRef<HTMLVideoElement>(null);
+function Receiver() {
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [socket, setSocket] = useState<WebSocket | null>(null);
-  // const [pc, setPc] = useState<RTCPeerConnection | null>(null);
-  let pc = new RTCPeerConnection();
+  const pcRef = useRef<RTCPeerConnection | null>(null);
 
   useEffect(() => {
-          const socket = new WebSocket("ws://localhost:3001")
-          setSocket(socket);
-          socket.onopen = () => {
-              socket.send(JSON.stringify({type : "receiver"}))
-              console.log("Receiver connected to WebSocket server");
+    const ws = new WebSocket("ws://localhost:3001");
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type: "receiver" }));
+      setSocket(ws);
+    };
+
+    ws.onmessage = async (event) => {
+      const message = JSON.parse(event.data);
+
+      if (message.type === "createOffer") {
+        const peer = new RTCPeerConnection({
+          iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+        });
+        pcRef.current = peer;
+
+        peer.onicecandidate = (event) => {
+          if (event.candidate) {
+            ws.send(JSON.stringify({ type: "iceCandidate", candidate: event.candidate }));
           }
+        };
 
-          socket.onmessage = async(event) => {
-            const message = JSON.parse(event.data);
-
-            if (message.type === "createOffer") {
-              pc = new RTCPeerConnection();
-              
-              await pc.setRemoteDescription(message.sdp);
-              
-              pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                  socket?.send(JSON.stringify({ type: "iceCandidate", candidate: event.candidate }));
-                  console.log("ICE Candidate change required, request sent to sender");
-                }  
-              };
-
-              pc.ontrack = (event) => {
-                console.log("Track received:", event); 
-                console.log("Setting video source to received track");
-                
-                if (videoRef.current) {
-                  console.log("Video element found, setting source");
-                  
-                  videoRef.current.srcObject = new MediaStream([event.track]);
-                }
-              }
-              
-              const answer = await pc.createAnswer();
-              await pc.setLocalDescription(answer);
-              
-              
-              socket.send(JSON.stringify({ type: "answer", sdp: pc.localDescription }));
-            } else if (message.type === "iceCandidate") {
-              console.log("ICE Candidate received from sender:", message.candidate);
-              
-              pc?.addIceCandidate(message.candidate)
-            }
-            
-            // //@ts-ignore
-            // pc?.ontrack = (track) => {
-            //   console.log("Track received:", track); 
-            // }
+        peer.ontrack = (event) => {
+          console.log("Track received:", event.track);
+          if (videoRef.current) {
+            videoRef.current.srcObject = event.streams[0];
           }
+        };
 
-      }, [])
+        await peer.setRemoteDescription(new RTCSessionDescription(message.sdp));
+        const answer = await peer.createAnswer();
+        await peer.setLocalDescription(answer);
+
+        ws.send(JSON.stringify({ type: "answer", sdp: peer.localDescription }));
+      }
+
+      if (message.type === "iceCandidate" && pcRef.current) {
+        await pcRef.current.addIceCandidate(new RTCIceCandidate(message.candidate));
+      }
+    };
+  }, []);
 
   return (
     <div>
       <div>Receiver</div>
-      <video ref={videoRef} autoPlay></video>
+      <video ref={videoRef} autoPlay muted playsInline height={300}></video>
+
     </div>
-  )
+  );
 }
 
-export default Reciever
+export default Receiver;
