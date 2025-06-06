@@ -23,7 +23,7 @@ function Sender() {
       
       pc.onicecandidate = (event) => {
         if (event.candidate) {
-          console.log("ICE Candidate changed:");
+          console.log("Sender ICE Candidate changed:");
           socket?.send(JSON.stringify({ type: "iceCandidate", candidate: event.candidate }));
         }
       }
@@ -43,11 +43,13 @@ function Sender() {
           await pc.setRemoteDescription(answer);
           console.log("Answer received and set as remote description");
         } else if (data.type === "iceCandidate") {
-          if(pc.remoteDescription) {
+          console.log(data.candidate);
+          // if(pc.remoteDescription) {
             const candidate = data.candidate;
+            
             await pc.addIceCandidate(candidate);
             console.log("ICE Candidate received and added:");
-          }
+          // }
         }
       }
       getCameraStreamAndSend(pc);
