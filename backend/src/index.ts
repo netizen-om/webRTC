@@ -42,14 +42,14 @@ wss.on("connection", (ws) => {
             console.log("ICE Candidate received");
             
             if (ws === reciverSocket) {
-                reciverSocket.send(
+                senderSocket?.send(
                     JSON.stringify({
                         type: "iceCandidate",
                         candidate: messgae.candidate
                     })
                 );
             } else if (ws === senderSocket) {
-                senderSocket.send(
+                reciverSocket?.send(
                     JSON.stringify({
                         type: "iceCandidate",
                         candidate: messgae.candidate
